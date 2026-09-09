@@ -4,18 +4,27 @@ const { useState, useEffect, useMemo, useCallback } = React;
 
 /* ---------------------- Firebase (sincronização) ------------------------ */
 /* SUBSTITUA pelos dados do SEU projeto Firebase (Configurações do projeto → Config do app). */
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "COLE_AQUI_SUA_API_KEY",
-  authDomain: "SEU_PROJETO.firebaseapp.com",
-  projectId: "SEU_PROJETO",
-  storageBucket: "SEU_PROJETO.appspot.com",
-  messagingSenderId: "000000000000",
-  appId: "1:000000000000:web:xxxxxxxxxxxxxxxxxxxxxx",
+  apiKey: "AIzaSyBTeyeblOVhgKSbyhaeczixPN4QMGKOw0o",
+  authDomain: "peste-5df22.firebaseapp.com",
+  projectId: "peste-5df22",
+  storageBucket: "peste-5df22.firebasestorage.app",
+  messagingSenderId: "703481494502",
+  appId: "1:703481494502:web:1560cf8e5f7700ed033427",
+  measurementId: "G-PG0F6W74T2"
 };
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const DATA_DOC = db.collection("mala_mia").doc("dados");
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 /* ------------------------ Ícones (SVG leve, sem libs) -------------------- */
 const makeIcon = (glyph) => ({ size = 16, strokeWidth, style, ...rest }) => (
