@@ -1,6 +1,6 @@
 /* Este arquivo roda direto no navegador via Babel Standalone — sem build.
    React/ReactDOM vêm de <script> globais carregados no index.html. */
-const { useState, useEffect, useMemo, useCallback } = React;
+const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
 /* ---------------------- Firebase (sincronização) ------------------------ */
 /* SUBSTITUA pelos dados do SEU projeto Firebase (Configurações do projeto → Config do app). */
@@ -114,20 +114,30 @@ const DEFAULT_DATA = {
 /* ------------------------------ helpers -------------------------------- */
 
 const uid = () => Math.random().toString(36).slice(2, 10);
-const todayStr = () => new Date().toISOString().slice(0, 10);
+const localDate = (d) => [d.getFullYear(), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0")].join("-");
+const todayStr = () => localDate(new Date());
 const num = (v) => (isNaN(parseFloat(v)) ? 0 : parseFloat(v));
 const formatBRL = (v) => (num(v)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const formatUSD = (v) => (num(v)).toLocaleString("en-US", { style: "currency", currency: "USD" });
 const formatDateBR = (s) => { if (!s) return "-"; const p = s.split("-"); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : s; };
 const monthKey = (s) => (s ? s.slice(0, 7) : "");
 const monthLabel = (key) => { if (!key) return "-"; const [y, m] = key.split("-"); return `${MESES[parseInt(m, 10) - 1]}/${y}`; };
-const addMonths = (dateStr, n) => { const d = new Date(dateStr + "T00:00:00"); d.setMonth(d.getMonth() + n); return d.toISOString().slice(0, 10); };
+const addMonths = (dateStr, n) => {
+  const d = new Date(dateStr + "T00:00:00");
+  if (isNaN(d.getTime())) throw new Error("Informe uma data válida para as parcelas.");
+  const day = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + n);
+  const lastDay = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(day, lastDay));
+  return localDate(d);
+};
 const thisMonthKey = () => todayStr().slice(0, 7);
 const clamp2 = (v) => Math.round(num(v) * 100) / 100;
 
 function genInstallments(total, count, firstDate) {
   const n = Math.max(1, parseInt(count, 10) || 1);
-  const base = clamp2(total / n);
+  const base = Math.floor(clamp2(total) * 100 / n) / 100;
   const rows = [];
   let acc = 0;
   for (let i = 0; i < n; i++) {
@@ -205,27 +215,36 @@ function App({ onLogout }) {
   const [tab, setTab] = useState("dashboard");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [saveErr, setSaveErr] = useState(false);
+  const [loadErr, setLoadErr] = useState(false);
+  const dataRef = useRef(DEFAULT_DATA);
+  const ready = useRef(false);
 
   useEffect(() => {
     const unsub = DATA_DOC.onSnapshot(
       (snap) => {
         if (snap.exists) {
           const parsed = snap.data();
-          setData({ ...DEFAULT_DATA, ...parsed, settings: { ...DEFAULT_DATA.settings, ...(parsed.settings || {}) } });
+          const next = { ...DEFAULT_DATA, ...parsed, settings: { ...DEFAULT_DATA.settings, ...(parsed.settings || {}), expenseByLocation: { ...DEFAULT_DATA.settings.expenseByLocation, ...parsed.settings?.expenseByLocation } } };
+          for (const key of ["products", "purchases", "customers", "resellers", "sales", "catalog"]) {
+            if (!Array.isArray(next[key])) { setLoadErr(true); setLoading(false); ready.current = false; return; }
+          }
+          dataRef.current = next;
+          setData(next);
         }
+        ready.current = true;
         setLoading(false);
       },
-      () => { setSaveErr(true); setLoading(false); }
+      () => { ready.current = false; setLoadErr(true); setLoading(false); }
     );
     return () => unsub();
   }, []);
 
   const save = useCallback((updater) => {
-    setData((prev) => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      DATA_DOC.set(next).catch(() => setSaveErr(true));
-      return next;
-    });
+    if (!ready.current) return;
+    const next = typeof updater === "function" ? updater(dataRef.current) : updater;
+    dataRef.current = next;
+    setData(next);
+    DATA_DOC.set(next).then(() => setSaveErr(false)).catch(() => setSaveErr(true));
   }, []);
 
   const productsById = useMemo(() => Object.fromEntries(data.products.map((p) => [p.id, p])), [data.products]);
@@ -268,7 +287,7 @@ function App({ onLogout }) {
 
   const upsertProductFromPurchaseItem = (prev, item, ctx) => {
     const existingIdx = prev.products.findIndex(
-      (p) => p.name.toLowerCase() === item.name.toLowerCase() && p.category.toLowerCase() === (item.category || "").toLowerCase()
+      (p) => p.name.toLowerCase() === item.name.toLowerCase() && (p.category || "Geral").trim().toLowerCase() === (item.category || "Geral").trim().toLowerCase()
     );
     const unitBRL = ctx.location === "Paraguai" ? num(item.unitValue) * num(ctx.dollarRate) : num(item.unitValue);
     const valorPago = clamp2(unitBRL * (1 + num(ctx.paymentFee) / 100));
@@ -294,6 +313,8 @@ function App({ onLogout }) {
   const saveSettings = (patch) => save((prev) => ({ ...prev, settings: { ...prev.settings, ...patch } }));
 
   /* ---------------------------------------------------------------- */
+
+  if (loadErr) return <div className="cc-root cc-loading"><Style /><div className="cc-card" role="alert">Não foi possível carregar os dados. Verifique a conexão e a permissão de acesso ao banco.<br /><button className="cc-btn" onClick={() => window.location.reload()}>Tentar novamente</button><button className="cc-btn" onClick={onLogout}>Sair</button></div></div>;
 
   if (loading) {
     return (
@@ -578,7 +599,8 @@ function Compras({ data, save, upsertProductFromPurchaseItem }) {
   }, 0) : 0;
 
   const submit = () => {
-    if (!form.items.some((i) => i.name.trim())) return;
+    if (!form.date || (form.location === "Paraguai" && form.dollarRate <= 0)) return alert("Informe a data e uma cotação do dólar positiva.");
+    if (!form.items.length || form.items.some((i) => !i.name.trim() || !Number.isInteger(i.qty) || i.qty <= 0 || i.unitValue < 0)) return alert("Preencha os produtos com quantidades positivas e valores válidos.");
     const purchase = { id: uid(), ...form, totalBRL: clamp2(totalPurchaseBRL) };
     save((prev) => {
       let products = prev.products;
@@ -788,12 +810,21 @@ function Vendas({ data, save, productsById, addCustomerQuick }) {
 
   const total = form ? form.items.reduce((a, it) => a + num(it.qty) * num(it.price), 0) : 0;
 
-  const gerarParcelas = () => setForm((f) => ({ ...f, installments: genInstallments(total, f.installmentsCount, f.firstDueDate) }));
+  const gerarParcelas = () => {
+    if (!form.firstDueDate || !Number.isInteger(form.installmentsCount) || form.installmentsCount < 1 || form.installmentsCount > 360) return alert("Informe a data e uma quantidade de parcelas entre 1 e 360.");
+    setForm((f) => ({ ...f, installments: genInstallments(total, f.installmentsCount, f.firstDueDate) }));
+  };
 
   const updateInstallment = (n, patch) => setForm((f) => ({ ...f, installments: f.installments.map((i) => (i.n === n ? { ...i, ...patch } : i)) }));
 
   const submit = () => {
-    if (!form.items.some((i) => i.productId)) return;
+    if (!form.date || !form.firstDueDate || !Number.isInteger(form.installmentsCount) || form.installmentsCount < 1 || form.installmentsCount > 360) return alert("Informe as datas e uma quantidade de parcelas entre 1 e 360.");
+    if (!form.customerId && !form.newCustomerName.trim()) return alert("Selecione ou cadastre uma cliente.");
+    if (!form.items.length || form.items.some((i) => !productsById[i.productId] || !Number.isInteger(i.qty) || i.qty <= 0 || i.price < 0)) return alert("Informe produtos, quantidades positivas e preços válidos.");
+    const quantities = {};
+    form.items.forEach((i) => { quantities[i.productId] = (quantities[i.productId] || 0) + i.qty; });
+    if (Object.entries(quantities).some(([id, qty]) => qty > num(productsById[id].qty))) return alert("Estoque insuficiente para esta venda.");
+    if (form.installments && (form.installments.length !== form.installmentsCount || form.installments.some((i) => !i.dueDate || i.value < 0) || clamp2(form.installments.reduce((a, i) => a + num(i.value), 0)) !== clamp2(total))) return alert("Atualize as parcelas: a soma deve corresponder ao total da venda.");
     let customerId = form.customerId;
     save((prev) => {
       let customers = prev.customers;
@@ -804,8 +835,8 @@ function Vendas({ data, save, productsById, addCustomerQuick }) {
       const installments = form.installments && form.installments.length ? form.installments : genInstallments(total, form.installmentsCount, form.firstDueDate);
       const items = form.items.filter((i) => i.productId).map((i) => ({ ...i, name: productsById[i.productId]?.name || "?" }));
       const products = prev.products.map((p) => {
-        const it = items.find((i) => i.productId === p.id);
-        return it ? { ...p, qty: Math.max(0, num(p.qty) - num(it.qty)) } : p;
+        const qty = items.filter((i) => i.productId === p.id).reduce((sum, i) => sum + num(i.qty), 0);
+        return qty ? { ...p, qty: num(p.qty) - qty } : p;
       });
       const sale = { id: uid(), date: form.date, customerId, resellerId: form.resellerId || null, items, total: clamp2(total), installments, status: "ativa" };
       return { ...prev, customers, products, sales: [...prev.sales, sale] };
@@ -825,8 +856,8 @@ function Vendas({ data, save, productsById, addCustomerQuick }) {
     const sale = prev.sales.find((s) => s.id === saleId);
     if (!sale || sale.status === "cancelada") return prev;
     const products = prev.products.map((p) => {
-      const it = sale.items.find((i) => i.productId === p.id);
-      return it ? { ...p, qty: num(p.qty) + num(it.qty) } : p;
+      const qty = sale.items.filter((i) => i.productId === p.id).reduce((sum, i) => sum + num(i.qty), 0);
+      return qty ? { ...p, qty: num(p.qty) + qty } : p;
     });
     const sales = prev.sales.map((s) => s.id !== saleId ? s : { ...s, status: "cancelada", installments: s.installments.map((i) => ({ ...i, status: i.status === "pago" ? i.status : "cancelada" })) });
     return { ...prev, products, sales };
@@ -1215,6 +1246,8 @@ function Style() {
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=Parisienne&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,600&family=Inter:wght@400;500;600;700&display=swap');
 
+      body { margin:0; }
+      .cc-root, .cc-root * { box-sizing:border-box; }
       .cc-root { display:flex; min-height:100vh; background:#FBF1E7; font-family:'Inter',sans-serif; color:#3B2430; }
       .cc-loading { align-items:center; justify-content:center; }
       .cc-loading-text { color:#8B6F5D; }
@@ -1333,8 +1366,17 @@ function LoginScreen() {
     e.preventDefault();
     setError("");
     setBusy(true);
-    auth.signInWithEmailAndPassword(email, password)
-      .catch(() => setError("E-mail ou senha inválidos."))
+    auth.signInWithEmailAndPassword(email.trim(), password)
+      .catch((err) => {
+        const messages = {
+          "auth/network-request-failed": "Não foi possível conectar. Verifique sua internet e tente novamente.",
+          "auth/too-many-requests": "Muitas tentativas. Aguarde um pouco e tente novamente.",
+          "auth/operation-not-allowed": "O acesso por e-mail e senha precisa ser habilitado no Firebase.",
+          "auth/invalid-api-key": "A configuração de acesso ao Firebase é inválida.",
+          "auth/user-disabled": "Esta conta está desativada. Entre em contato com o administrador.",
+        };
+        setError(messages[err.code] || "Não foi possível entrar. Confira o e-mail e a senha e tente novamente.");
+      })
       .finally(() => setBusy(false));
   };
 
