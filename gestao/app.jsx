@@ -1206,6 +1206,61 @@ function Estoque({ data, activeSales }) {
 
 /* ============================== CATÁLOGO PARAGUAI ============================== */
 
+
+function ComparacaoParaguai({data}) {
+  const [feed,setFeed]=useState(null);
+  const [error,setError]=useState("");
+  const [loading,setLoading]=useState(false);
+  const latest = [...data.purchases].filter(p=>p.location==="Paraguai" && num(p.dollarRate)>0).sort((a,b)=>b.date.localeCompare(a.date))[0];
+  const [rate,setRate]=useState(()=>latest ? num(latest.dollarRate) : 0);
+  const [expenses,setExpenses]=useState(()=>num(data.settings.expenseByLocation.Paraguai));
+  const normalize=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g," ").trim();
+  const reload=useCallback(async()=>{
+    setLoading(true);
+    try {
+      const response=await fetch("../assets/paraguay-prices.json?t="+Date.now(),{cache:"no-store"});
+      if(!response.ok) throw Error();
+      const next=await response.json();
+      if(next.schemaVersion!==1 || !Array.isArray(next.items)) throw Error();
+      setFeed(next);setError("");
+    }catch(_){setError("Não foi possível carregar a consulta. Os últimos valores exibidos podem estar desatualizados.");}
+    finally{setLoading(false);}
+  },[]);
+  useEffect(()=>{reload();const timer=setInterval(reload,300000);return ()=>clearInterval(timer);},[reload]);
+  const change=(value,base)=>{
+    if(!Number.isFinite(value)||!Number.isFinite(base)||base<=0)return "Sem base";
+    const diff=value-base;
+    return <Badge tone={diff>0?"red":diff<0?"green":"muted"}>{Math.abs(diff)<.005?"Igual":(diff>0?"Mais caro ":"Mais barato ")+formatBRL(Math.abs(diff))+" ("+Math.abs(diff/base*100).toFixed(1)+"%)"}</Badge>;
+  };
+  return <Section title="Comparação automática · Compras Paraguai">
+    <p className="cc-muted">Consulta diária programada às 9h (Brasília), pelo Codex. O painel recarrega os resultados a cada 5 minutos. Nenhum preço de venda é alterado automaticamente.</p>
+    <p className="cc-muted">Última consulta: {feed?.checkedAt ? new Date(feed.checkedAt).toLocaleString("pt-BR") : "Aguardando"}{feed?.checkedAt && Date.now()-Date.parse(feed.checkedAt)>36*3600000 ? " · Consulta atrasada" : ""}</p>
+    <div className="cc-form-grid" style={{marginBottom:20}}>
+      <Field label="Dólar para comparar (R$)" hint="Inicialmente usa a cotação da sua última compra. É uma simulação, não a cotação de hoje."><input className="cc-input" type="number" min="0" step="0.01" value={rate} onChange={e=>setRate(num(e.target.value))}/></Field>
+      <Field label="Despesas para comparar (%)" hint="Acrescentadas ao preço convertido para estimar o custo de reposição."><input className="cc-input" type="number" min="0" step="0.1" value={expenses} onChange={e=>setExpenses(Math.max(0,num(e.target.value)))}/></Field>
+    </div>
+    <button className="cc-btn cc-btn-secondary" disabled={loading} onClick={reload}>{loading?"Carregando…":"Recarregar comparação"}</button>
+    {error && <p role="alert">{error}</p>}
+    <div style={{overflowX:"auto",marginTop:16}}><table className="cc-table">
+      <thead><tr><th>Produto</th><th>Paraguai (US$)</th><th>Fonte / data</th><th>Convertido (R$)</th><th>Custo estimado com despesas</th><th>Seu custo atual</th><th>Reposição × seu custo</th><th>Sua venda</th><th>Paraguai convertido × sua venda</th></tr></thead>
+      <tbody>{data.products.map(p=>{
+        const quote=feed?.items.find(q=>normalize(q.name)===normalize(p.name));
+        const valid=quote && ["quoted","historical"].includes(quote.status) && Number.isFinite(quote.priceUSD)&&quote.priceUSD>0;
+        const converted=valid && rate>0?clamp2(quote.priceUSD*rate):null;
+        const landed=converted!==null?clamp2(converted*(1+expenses/100)):null;
+        const old=quote?.status!=="quoted" || !quote?.sourceDate || quote.sourceDate!==todayStr();
+        const url=quote?.sourceUrl && /^https:\/\/(www\.|mobile\.)?comprasparaguai\.com\.br\//.test(quote.sourceUrl)?quote.sourceUrl:null;
+        return <tr key={p.id}>
+          <td className="cc-strong">{p.name}</td><td>{valid?formatUSD(quote.priceUSD):"Sem cotação"}{old&&valid&&<div className="cc-muted">Referência antiga</div>}</td>
+          <td>{url&&<a href={url} target="_blank" rel="noopener noreferrer">Ver fonte</a>}<div>{quote?.sourceDate?formatDateBR(quote.sourceDate):"Pendente"}</div><small>{quote?.basis}</small>{quote?.note&&<p className="cc-muted">{quote.note}</p>}</td>
+          <td>{converted!==null?formatBRL(converted):"—"}</td><td>{landed!==null?formatBRL(landed):"—"}</td><td>{formatBRL(p.custoFinal)}</td>
+          <td>{landed!==null?change(landed,num(p.custoFinal)):"—"}</td><td>{formatBRL(p.precoVenda)}</td><td>{converted!==null?change(converted,num(p.precoVenda)):"—"}</td>
+        </tr>;
+      })}</tbody></table></div>
+    <p className="cc-muted">“Mais caro/barato” compara o valor do Paraguai com o seu. Referências antigas não confirmam a oferta de hoje. A conversão direta não inclui frete, impostos ou despesas; o custo estimado inclui somente o percentual acima. Confirme tamanho, embalagem e condições na loja.</p>
+  </Section>;
+}
+
 function Catalogo({ data, save }) {
   const [form, setForm] = useState(null);
 
@@ -1236,7 +1291,8 @@ function Catalogo({ data, save }) {
         <button className="cc-btn cc-btn-primary" onClick={() => setForm({ name: "", priceUSD: 0, date: todayStr(), notes: "" })}><Plus size={16} /> Novo item</button>
       </div>
 
-      <Section title={`Itens no catálogo (${data.catalog.length})`}>
+      <ComparacaoParaguai data={data} />
+      <Section title={`Itens manuais no catálogo (${data.catalog.length})`}>
         {data.catalog.length ? (
           <table className="cc-table">
             <thead><tr><th>Produto</th><th>Preço atual (US$)</th><th>Verificado em</th><th>Última compra</th><th>Variação</th><th>Notas</th><th></th></tr></thead>
