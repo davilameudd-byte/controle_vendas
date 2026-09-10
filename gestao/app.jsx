@@ -25,6 +25,7 @@ function publicCatalog(data) {
     id: p.id, name: p.name || "", category: p.category || "Perfumes",
     price: Math.max(0, Number(p.precoVenda) || 0),
     imageUrl: /^https:\/\//i.test(p.imageUrl || "") ? p.imageUrl : "",
+    imageId: ProductPhotos.validId(p.imageId) ? p.imageId : "",
     available: Number(p.qty) > 0,
   })) };
 }
@@ -249,15 +250,16 @@ function App({ onLogout }) {
     return () => unsub();
   }, []);
 
-  const save = useCallback((updater) => {
+  const save = useCallback((updater, photo) => {
     if (!ready.current) return;
     const next = typeof updater === "function" ? updater(dataRef.current) : updater;
     dataRef.current = next;
     setData(next);
     const batch = db.batch();
+    if (photo) batch.set(db.collection("productImages").doc(photo.id), { dataUrl: photo.dataUrl });
     batch.set(DATA_DOC, next);
     batch.set(PUBLIC_CATALOG, publicCatalog(next));
-    batch.commit().then(() => { setSaveErr(false); setCatalogStatus("Catálogo atualizado no site."); }).catch(() => { setSaveErr(true); setCatalogStatus("Falha ao salvar e atualizar o site. Tente novamente."); });
+    return batch.commit().then(() => { setSaveErr(false); setCatalogStatus("Catálogo atualizado no site."); return true; }).catch(() => { setSaveErr(true); setCatalogStatus("Falha ao salvar e atualizar o site. Tente novamente."); return false; });
   }, []);
 
   const publishCatalog = () => {
@@ -519,22 +521,60 @@ function Dashboard({ data, activeSales, commissionRows }) {
 
 /* ============================== PRODUTOS ============================== */
 
+function ProductPhoto({product, className, preview}) {
+  const [src, setSrc] = useState("");
+  useEffect(() => {
+    let active = true;
+    setSrc("");
+    ProductPhotos.resolve(db,product).then(value => { if (active) setSrc(value); }).catch(() => {});
+    return () => { active = false; };
+  }, [product.imageId, product.imageUrl]);
+  return src ? <img src={src} className={className} alt={preview ? "Foto atual do produto" : ""} style={preview ? {width:120,height:140,objectFit:"contain",marginTop:12} : undefined} onError={() => setSrc("")} /> : null;
+}
 function Produtos({ data, save }) {
   const blank = { name: "", category: "", qty: 0, valorPago: 0, custoFinal: 0, precoVenda: 0, local: "Paraguai", dataCompra: todayStr(), fornecedor: "", imageUrl: "", published: true };
   const [form, setForm] = useState(null);
+  const [photo, setPhoto] = useState(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoError, setPhotoError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const photoInput = useRef(null);
+  const photoVersion = useRef(0);
+  const openForm = value => { photoVersion.current++; setPhoto(null); setPhotoBusy(false); setPhotoError(""); setForm(value); };
+  const closeForm = () => { if (!saving) openForm(null); };
+  const choosePhoto = async event => {
+    const file = event.target.files[0]; event.target.value = "";
+    if (!file) return;
+    const version = ++photoVersion.current;
+    setPhotoBusy(true); setPhotoError("");
+    try {
+      const dataUrl = await ProductPhotos.prepare(file);
+      if (version !== photoVersion.current) return;
+      const id = uid();
+      setPhoto({id,dataUrl});
+      setForm(prev => prev && ({...prev,imageId:id,imageUrl:""}));
+    } catch (err) { if (version === photoVersion.current) setPhotoError(err.message); }
+    finally { if (version === photoVersion.current) setPhotoBusy(false); }
+  };
   const [q, setQ] = useState("");
 
   const list = data.products.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()) || (p.category || "").toLowerCase().includes(q.toLowerCase()));
 
-  const submit = () => {
+  const submit = async () => {
+    if (photoBusy || saving) return;
     if (!form.name.trim()) return;
     if (form.imageUrl && !/^https:\/\//i.test(form.imageUrl)) return alert("Use um endereço de imagem que comece com https://.");
     if (num(form.precoVenda) < 0 || num(form.qty) < 0) return alert("Preço e estoque não podem ser negativos.");
-    save((prev) => {
-      const exists = prev.products.some((p) => p.id === form.id);
-      return { ...prev, products: exists ? prev.products.map((p) => (p.id === form.id ? form : p)) : [...prev.products, { ...form, id: uid() }] };
-    });
-    setForm(null);
+    const product = { ...form, id: form.id || uid() };
+    setForm(product);
+    setSaving(true);
+    const saved = await save((prev) => {
+      const exists = prev.products.some((p) => p.id === product.id);
+      return { ...prev, products: exists ? prev.products.map((p) => (p.id === product.id ? product : p)) : [...prev.products, product] };
+    }, photo);
+    setSaving(false);
+    if (saved) openForm(null);
+    else setPhotoError("Não foi possível salvar. Verifique sua conexão e tente novamente.");
   };
 
   const remove = (id) => save((prev) => ({ ...prev, products: prev.products.filter((p) => p.id !== id) }));
@@ -543,7 +583,7 @@ function Produtos({ data, save }) {
     <div className="cc-page">
       <div className="cc-page-head">
         <div><h1>Produtos</h1><p className="cc-page-sub">Seu catálogo completo, com preços sempre editáveis.</p></div>
-        <button className="cc-btn cc-btn-primary" onClick={() => setForm(blank)}><Plus size={16} /> Novo produto</button>
+        <button className="cc-btn cc-btn-primary" onClick={() => openForm(blank)}><Plus size={16} /> Novo produto</button>
       </div>
 
       <div className="cc-search"><Search size={15} /><input placeholder="Buscar por nome ou categoria…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
@@ -555,7 +595,7 @@ function Produtos({ data, save }) {
             <tbody>
               {list.map((p) => (
                 <tr key={p.id}>
-                  <td className="cc-strong">{p.imageUrl && <img className="cc-product-thumb" src={p.imageUrl} alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} />}{p.name}</td>
+                  <td className="cc-strong"><ProductPhoto product={p} className="cc-product-thumb" />{p.name}</td>
                   <td>{p.category}</td>
                   <td>{p.qty <= num(data.settings.lowStock) ? <Badge tone={p.qty === 0 ? "red" : "gold"}>{p.qty}</Badge> : p.qty}</td>
                   <td>{formatBRL(p.valorPago)}</td>
@@ -563,7 +603,7 @@ function Produtos({ data, save }) {
                   <td className="cc-strong">{formatBRL(p.precoVenda)}</td>
                   <td>{p.local}</td>
                   <td className="cc-row-actions">
-                    <IconBtn title="Editar" onClick={() => setForm(p)}><Pencil size={15} /></IconBtn>
+                    <IconBtn title="Editar" onClick={() => openForm(p)}><Pencil size={15} /></IconBtn>
                     <IconBtn title="Excluir" danger onClick={() => remove(p.id)}><Trash2 size={15} /></IconBtn>
                   </td>
                 </tr>
@@ -574,10 +614,16 @@ function Produtos({ data, save }) {
       </Section>
 
       {form && (
-        <Modal title={form.id ? "Editar produto" : "Novo produto"} onClose={() => setForm(null)}>
+        <Modal title={form.id ? "Editar produto" : "Novo produto"} onClose={closeForm}>
           <div className="cc-form-grid">
             <Field label="Nome do produto"><input className="cc-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
-            <Field label="Imagem do produto (URL)" hint="Cole o link direto da foto (https://). A foto aparecerá automaticamente no site."><input type="url" className="cc-input" value={form.imageUrl || ""} onChange={(e) => setForm({ ...form, imageUrl: e.target.value.trim() })} /></Field>
+            <Field label="Foto do produto" hint="Escolha uma imagem JPG, PNG ou WebP de até 20 MB. Ela será publicada ao salvar.">
+              <input ref={photoInput} type="file" accept="image/jpeg,image/png,image/webp" aria-label="Arquivo da foto" style={{display:"none"}} onChange={choosePhoto} />
+              <button type="button" className="cc-btn cc-btn-secondary" disabled={photoBusy || saving} onClick={() => photoInput.current.click()}>{photoBusy ? "Preparando foto…" : "Escolher foto"}</button>
+              {photo ? <img src={photo.dataUrl} alt="Prévia da foto escolhida" style={{width:120,height:140,objectFit:"contain",marginTop:12}} /> : <ProductPhoto product={form} preview />}
+              {photoError && <p role="alert" style={{color:"#9c3030"}}>{photoError}</p>}
+            </Field>
+            <Field label="Imagem do produto (URL)" hint="Cole o link direto da foto (https://). A foto aparecerá automaticamente no site."><input type="url" className="cc-input" value={form.imageUrl || ""} disabled={photoBusy || saving} onChange={(e) => { setPhoto(null); setForm({ ...form, imageId: "", imageUrl: e.target.value.trim() }); }} /></Field>
             <Field label="Exibir no site"><select className="cc-input" value={form.published === false ? "nao" : "sim"} onChange={(e) => setForm({ ...form, published: e.target.value === "sim" })}><option value="sim">Sim</option><option value="nao">Não</option></select></Field>
             <Field label="Categoria"><input className="cc-input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></Field>
             <Field label="Quantidade em estoque"><input type="number" className="cc-input" value={form.qty} onChange={(e) => setForm({ ...form, qty: num(e.target.value) })} /></Field>
@@ -592,7 +638,7 @@ function Produtos({ data, save }) {
             <Field label="Data da compra"><input type="date" className="cc-input" value={form.dataCompra} onChange={(e) => setForm({ ...form, dataCompra: e.target.value })} /></Field>
             <Field label="Fornecedor (opcional)"><input className="cc-input" value={form.fornecedor} onChange={(e) => setForm({ ...form, fornecedor: e.target.value })} /></Field>
           </div>
-          <div className="cc-modal-actions"><button className="cc-btn cc-btn-secondary" onClick={() => setForm(null)}>Cancelar</button><button className="cc-btn cc-btn-primary" onClick={submit}><Check size={16} /> Salvar</button></div>
+          <div className="cc-modal-actions"><button className="cc-btn cc-btn-secondary" disabled={saving} onClick={closeForm}>Cancelar</button><button className="cc-btn cc-btn-primary" disabled={photoBusy || saving} onClick={submit}><Check size={16} /> {saving ? "Salvando…" : "Salvar"}</button></div>
         </Modal>
       )}
     </div>

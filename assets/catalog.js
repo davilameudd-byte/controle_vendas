@@ -12,9 +12,10 @@
       const media = document.createElement('div'); media.className = 'product-media';
       const fallback = document.createElement('span'); fallback.className = 'product-no-photo'; fallback.textContent = 'Imagem em breve';
       media.append(fallback);
-      if (typeof p.imageUrl === 'string' && /^https:\/\//i.test(p.imageUrl)) {
-        const img = document.createElement('img'); img.src = p.imageUrl; img.alt = p.name; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
+      if (ProductPhotos.validId(p.imageId) || (typeof p.imageUrl === 'string' && /^https:\/\//i.test(p.imageUrl))) {
+        const img = document.createElement('img'); img.alt = p.name; img.loading = 'lazy'; img.referrerPolicy = 'no-referrer';
         img.onload = () => { fallback.hidden = true; }; img.onerror = () => { img.remove(); fallback.hidden = false; }; media.append(img);
+        ProductPhotos.resolve(firebase.firestore(), p).then(src => { if (src) img.src = src; else img.onerror(); }).catch(() => img.onerror());
       }
       const title = document.createElement('h3'); title.textContent = p.name;
       const category = document.createElement('div'); category.className = 'note'; category.textContent = p.category || 'Perfumes';
