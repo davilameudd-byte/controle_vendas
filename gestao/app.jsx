@@ -4,27 +4,21 @@ const { useState, useEffect, useMemo, useCallback } = React;
 
 /* ---------------------- Firebase (sincronização) ------------------------ */
 /* SUBSTITUA pelos dados do SEU projeto Firebase (Configurações do projeto → Config do app). */
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// index.html ja carrega firebase-app-compat.js, firebase-auth-compat.js e
+// firebase-firestore-compat.js como <script> globais, por isso usamos a
+// API compat (window.firebase) aqui, e nao "import" (que exige um bundler).
 const firebaseConfig = {
-  apiKey: "AIzaSyBTeyeblOVhgKSbyhaeczixPN4QMGKOw0o",
-  authDomain: "peste-5df22.firebaseapp.com",
-  projectId: "peste-5df22",
-  storageBucket: "peste-5df22.firebasestorage.app",
-  messagingSenderId: "703481494502",
-  appId: "1:703481494502:web:1560cf8e5f7700ed033427",
-  measurementId: "G-PG0F6W74T2"
+   apiKey: "AIzaSyBTeyeblOVhgKSbyhaeczixPN4QMGKOw0o",
+   authDomain: "peste-5df22.firebaseapp.com",
+   projectId: "peste-5df22",
+   storageBucket: "peste-5df22.firebasestorage.app",
+   messagingSenderId: "703481494502",
+   appId: "1:703481494502:web:1560cf8e5f7700ed033427"
 };
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const DATA_DOC = db.collection("appData").doc("mala-mia");
 
 /* ------------------------ Ícones (SVG leve, sem libs) -------------------- */
 const makeIcon = (glyph) => ({ size = 16, strokeWidth, style, ...rest }) => (
