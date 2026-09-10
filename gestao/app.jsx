@@ -365,6 +365,7 @@ function App({ onLogout }) {
       </aside>
 
       <main className="cc-main">
+        <div className="cc-welcome"><div><strong>Mala Mia · Gestão</strong>Um cuidado especial com cada detalhe do seu negócio.</div><a href="../" target="_blank" rel="noopener noreferrer">Ver loja ↗</a></div>
         {tab === "dashboard" && <Dashboard data={data} activeSales={activeSales} commissionRows={commissionRows} />}
         {tab === "produtos" && <Produtos data={data} save={save} />}
         {tab === "compras" && <Compras data={data} save={save} upsertProductFromPurchaseItem={upsertProductFromPurchaseItem} />}
@@ -1381,12 +1382,13 @@ function LoginScreen() {
   };
 
   return (
-    <div className="cc-root cc-loading">
+    <div className="cc-root cc-loading cc-login">
       <Style />
+      <img className="cc-login-art" src="../assets/mala-mia-banner.jpg" alt="Mala Mia — Perfumes exclusivos" width="1961" height="544" />
       <form onSubmit={submit} className="cc-card" style={{ maxWidth: 360, width: "90%" }}>
         <div style={{ textAlign: "center", marginBottom: 18 }}>
           <div className="cc-brand-title" style={{ fontSize: 34 }}>Mala Mia</div>
-          <div className="cc-muted">Acesso à gestão</div>
+          <div className="cc-muted">Bem-vinda ao seu espaço de gestão</div>
         </div>
         <div className="cc-form-grid" style={{ gridTemplateColumns: "1fr" }}>
           <Field label="E-mail">
@@ -1400,6 +1402,7 @@ function LoginScreen() {
         <div className="cc-modal-actions" style={{ justifyContent: "center", marginTop: 16 }}>
           <button className="cc-btn cc-btn-primary" disabled={busy} type="submit">{busy ? "Entrando…" : "Entrar"}</button>
         </div>
+      <p className="cc-login-footer"><a href="../">← Voltar para a loja</a></p>
       </form>
     </div>
   );

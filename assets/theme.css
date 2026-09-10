@@ -1,0 +1,75 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Parisienne&display=swap');
+
+:root{--cream:#faf6ee;--cream-soft:#fffcf7;--blush:#f2e5cf;--blush-deep:#e7d7ba;--wine:#805321;--wine-deep:#4c321e;--gold:#aa772e;--gold-light:#ecd5a3;--ink:#352a22;--muted:#776650;--brand-border:#e8ddca;--brand-shadow:0 12px 36px #57381409}
+html{scroll-behavior:smooth;scroll-padding-top:90px}
+body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--ink)}
+button,input,select{font:inherit}
+a,button,input,select{ -webkit-tap-highlight-color:transparent }
+:focus-visible{outline:3px solid #936322;outline-offset:4px}
+button,a{transition:background .2s,box-shadow .2s,transform .2s}
+.wrap{max-width:1240px}
+header{background:#fffaf1f2;border-color:var(--brand-border)}
+.nav{padding:18px 24px}.brand-mark{border:1px solid #c69b52;background:linear-gradient(145deg,#fcf0cf,#debd7b);color:#65411d}
+.brand-name{font-size:34px}.nav-cta{border-radius:8px;padding:12px 22px;background:#523a24}
+.brand-banner{width:100%;height:auto;display:block;aspect-ratio:1961/544;object-fit:contain;background:#f7e4c7}
+.hero{padding:0 0 42px;background:linear-gradient(#f8e9d2,#faf6ee)}
+.hero:before,.hero:after{display:none}
+.hero>.wrap{padding-top:32px;display:grid;grid-template-columns:1.4fr 1fr;gap:8px 48px;text-align:left;align-items:center}
+.ribbon{grid-column:1;background:transparent;color:#74501f;border-radius:0;padding:0;letter-spacing:.17em;text-transform:uppercase;font-size:10px;margin:0 0 8px}
+.hero h1{grid-column:1;font-family:'Cormorant Garamond',Georgia,serif;font-size:clamp(32px,3.5vw,48px);line-height:1.08;margin:0}
+.hero .sub{grid-column:1;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:400;margin:6px 0;max-width:none;color:var(--muted)}
+.hero p.desc{grid-column:1;font-size:13px;max-width:590px;margin:0;color:var(--muted)}
+.hero-actions{grid-column:2;grid-row:2 / span 2;justify-content:flex-end;gap:10px}
+.btn{border-radius:8px;padding:14px 22px;font-size:13px;justify-content:center;min-height:46px}
+.btn-primary{background:#704c22;color:#fff9ee;box-shadow:0 5px 12px #7a4f2420}.btn-primary:hover{background:#4c321e}
+.btn-ghost{border-color:#cdb88e;background:#fff9ef;color:#65421d}
+.info-strip{grid-column:1 / -1;max-width:none;width:100%;margin:24px 0 0;background:transparent;border-width:1px 0;border-radius:0;justify-content:flex-start}
+.info-item{flex:0 1 50%;padding:16px 24px;text-align:left;display:flex;align-items:center;gap:16px}.info-item:first-child{padding-left:0}
+.info-item .label{margin:0;font-size:10px;letter-spacing:.1em}.info-item .value{font-family:'Cormorant Garamond',Georgia,serif;font-size:25px}
+section{padding:64px 0}.section-head{max-width:none;text-align:left;margin-bottom:32px}.eyebrow{font-size:10px;letter-spacing:.2em;color:#8b6229}
+.section-head h2{font-family:'Cormorant Garamond',Georgia,serif;font-size:42px;line-height:1.12}
+.section-head p{font-size:13px}.grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.card{position:relative;border:1px solid var(--brand-border);border-radius:14px;background:linear-gradient(#f7f0e2 0 190px,#fffdfa 190px);padding:30px 26px 26px;box-shadow:var(--brand-shadow)}
+.card:hover{transform:translateY(-5px);box-shadow:0 16px 36px #57381415;border-color:#c8a771}
+.bottle{height:135px;margin:0 0 46px;filter:drop-shadow(4px 12px 9px #65452324)}
+.card h3{font-family:'Cormorant Garamond',Georgia,serif;font-size:25px}.card .note{font-size:12px;margin:8px 0}
+.card .price{font-family:'DM Sans',sans-serif;font-size:22px;margin:12px 0 20px}.card .order{border:1px solid #d2bd97;border-radius:7px;width:100%;padding:12px;color:#61451f}
+.card .order:hover{background:#61451f}.catalog-note{font-size:11px}
+.step{background:#fffdf8;border-radius:12px;border-color:var(--brand-border);padding:32px;text-align:left}.step .num{margin:0 0 20px;background:#f3e6ce;color:#79531f;border-radius:8px;width:40px;height:40px}.step h3{font-family:'Cormorant Garamond',Georgia,serif;font-size:25px}
+.final-cta{border:1px solid #9c7945;background:radial-gradient(ellipse at top right,#866332,#3d2b1b 70%);border-radius:16px;padding:58px 26px}.final-cta h2{font-family:'Cormorant Garamond',Georgia,serif;font-size:46px}.final-cta .btn-primary{background:#eed5a0;color:#49321c}
+footer .foot-brand{font-size:38px}footer{border-top:1px solid var(--brand-border)}.wa-float{background:#346349;width:52px;height:52px;right:18px;bottom:18px}
+
+/* Gestão: identidade da marca com superfícies neutras para leitura. */
+.cc-root{background:#f7f5ef!important;color:#352a22!important;font-family:'DM Sans',sans-serif!important}
+.cc-sidebar{background:linear-gradient(180deg,#38291d,#4d3720)!important;width:232px!important;padding:28px 18px!important;gap:24px!important}
+.cc-brand{gap:12px!important}.cc-brand-mark{background:linear-gradient(145deg,#f4dfaf,#c8a267)!important;color:#4f351c!important;border-radius:10px!important;width:40px!important;height:40px!important;border:1px solid #e8c786}
+.cc-brand-title{font-family:'Parisienne',cursive!important;font-size:31px!important}.cc-brand-sub{color:#dfc7a1!important;font-size:10px!important;letter-spacing:.04em}
+.cc-nav{gap:6px!important}.cc-nav-item{color:#e4d6c3!important;min-height:44px;border-radius:8px!important;font-size:13px!important;padding:12px!important;white-space:nowrap}
+.cc-nav-item:hover{background:#ffffff12!important}.cc-nav-item.active{background:#ecd7af!important;color:#4a341e!important;box-shadow:0 3px 12px #00000010}
+.cc-settings-btn{border-color:#ffffff20!important}.cc-main{min-width:0;max-width:none!important;width:100%;padding:32px!important}
+.cc-welcome{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:0 0 20px;margin-bottom:26px;border-bottom:1px solid #e4d9c7;color:#73614c;font-size:12px}
+.cc-welcome strong{display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#977139;margin-bottom:5px}.cc-welcome a{font-size:12px;color:#72532a;text-decoration:none;border:1px solid #d9c9ac;border-radius:8px;padding:10px 14px}
+.cc-page h1{font-family:'Cormorant Garamond',Georgia,serif!important;font-size:36px!important;line-height:1.1}.cc-page-sub{font-size:12px!important;color:#766653!important;line-height:1.6}
+.cc-kpi-grid{gap:14px!important;grid-template-columns:repeat(3,minmax(0,1fr))!important}.cc-kpi{border:1px solid #e8dfcf!important;border-radius:12px!important;padding:22px!important;box-shadow:var(--brand-shadow);background:#fffefa!important}
+.cc-kpi-label{color:#766653!important;font-size:11px!important}.cc-kpi-value{font-size:28px!important;letter-spacing:-.04em}.cc-kpi-gold{color:#886022!important}.cc-kpi-sub{color:#776956!important}
+.cc-card{border:1px solid #e8dfcf!important;border-radius:12px!important;padding:24px!important;box-shadow:var(--brand-shadow);background:#fffefa!important;overflow-x:auto}
+.cc-section-head h2,.cc-subhead,.cc-modal-head h3{font-family:'Cormorant Garamond',Georgia,serif!important;font-size:23px!important;color:#533c24}
+.cc-table th{font-size:10px!important;text-transform:uppercase;letter-spacing:.06em;background:#f8f3e9;border-bottom-color:#e8dfcf!important;padding:12px 10px!important;white-space:nowrap;color:#77634a!important}
+.cc-table td{padding:13px 10px!important;border-bottom-color:#eee6d9!important}.cc-table tbody tr:hover{background:#fcf8ee}.cc-table{font-size:12px!important}
+.cc-btn{border-radius:8px!important;min-height:42px;padding:10px 16px!important;font-size:12px!important}.cc-btn-primary{background:#785326!important;color:#fff!important}.cc-btn-primary:hover{background:#51391f!important}.cc-btn-secondary{border-color:#d8c7aa!important;color:#60492d!important;background:#fffdf8!important}
+.cc-btn:disabled{opacity:.6;cursor:wait}.cc-btn-sm{min-height:34px!important;padding:7px 10px!important}.cc-input{border-color:#daceba!important;border-radius:8px!important;padding:11px 12px!important;min-width:0;max-width:100%;background:#fffefa!important;color:#453522!important}
+.cc-input:focus{outline:2px solid #b38b4250!important;border-color:#a67d39!important}.cc-label{color:#725f47!important;font-size:12px!important}.cc-hint,.cc-muted{color:#7d6b55!important}
+.cc-search{border-color:#e1d5c0!important;max-width:380px!important;padding:12px 14px!important}.cc-search input{min-width:0}.cc-empty{font-size:13px!important;color:#82705b!important;padding:32px 8px!important}
+.cc-expand-row{border-color:#e8dfcf!important;border-radius:10px!important}.cc-expand-head{padding:14px!important;color:#4e3c28!important}.cc-expand-body{background:#fcf9f2!important;padding:18px!important;overflow-x:auto}
+.cc-modal-overlay{background:#2f231c80!important;backdrop-filter:blur(5px)}.cc-modal{border:1px solid #e0cba4;box-shadow:0 30px 90px #23190f33;border-radius:16px!important;background:#fffdf8!important}.cc-modal-head{border-color:#e8dfcf!important;padding:20px!important}.cc-modal-body{overflow-x:auto}
+.cc-login{position:relative;min-height:100vh!important;padding:clamp(200px,30vw,360px) 20px 60px;align-items:flex-start!important;background:linear-gradient(#f6e7cf,#faf7ef)!important}
+.cc-login-art{position:absolute;inset:0 0 auto;width:100%;height:auto;max-height:340px;object-fit:cover;object-position:center}
+.cc-login form{position:relative;z-index:1;max-width:420px!important;width:100%!important;padding:34px!important;background:#fffdf9f5!important;box-shadow:0 22px 70px #65451d20}
+.cc-login .cc-brand-title{color:#63451f;font-size:44px!important}.cc-login .cc-modal-actions .cc-btn{width:100%}.cc-login .cc-form-grid{gap:18px!important}
+.cc-login-footer{text-align:center;font-size:11px;color:#806d55;margin:20px 0 0}.cc-login-footer a{color:inherit}
+@media(min-width:1500px){.cc-main{padding:40px 54px!important}.cc-kpi-grid{grid-template-columns:repeat(6,minmax(0,1fr))!important}}
+@media(max-width:900px){.cc-sidebar{width:100%!important;height:auto!important;position:static!important;padding:16px!important;display:flex;flex-direction:row!important;flex-wrap:wrap;gap:12px!important}.cc-nav{order:3;flex-basis:100%!important;flex-direction:row!important;overflow-x:auto;padding-bottom:4px}.cc-brand{margin-right:auto}.cc-settings-btn{border:0!important;margin:0!important}.cc-sidebar>.cc-nav-item{padding:8px!important}.cc-main{padding:22px!important}.cc-welcome{margin-bottom:22px}.cc-login{flex-direction:column!important;align-items:center!important}.cc-login-art{min-height:180px;object-fit:cover}}
+@media(max-width:600px){.nav{padding:14px 20px}.brand-name{font-size:30px}.nav-cta{font-size:11px;padding:11px 14px}.hero>.wrap{display:block;padding-top:25px}.hero h1{font-size:36px}.hero .sub{margin:12px 0}.hero-actions{justify-content:flex-start;margin-top:20px}.hero-actions .btn{flex:1;white-space:nowrap;padding:13px 12px;font-size:12px}.info-strip{display:flex}.info-item{min-width:0;display:block;padding:14px 12px}.info-item .value{margin-top:5px}.brand-banner{min-height:160px;object-fit:cover;object-position:42% center}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.card{padding:24px 12px 16px;background:linear-gradient(#f7f0e2 0 155px,#fffdfa 155px)}.bottle{height:108px;margin-bottom:36px}.card h3{font-size:21px}.card .note{font-size:11px;min-height:40px}.card .price{font-size:19px}.card .order{font-size:11px;padding:11px 4px}.section-head h2{font-size:36px}section{padding:42px 0}.final-cta h2{font-size:36px}.cc-main{padding:18px 14px!important}.cc-kpi-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}.cc-kpi{padding:16px!important}.cc-kpi-value{font-size:23px!important}.cc-card{padding:16px!important}.cc-form-grid{grid-template-columns:1fr!important}.cc-field{min-width:0}.cc-modal-overlay{padding:10px!important}.cc-modal{max-height:92dvh!important}.cc-modal-body{padding:16px!important}.cc-modal .cc-table{min-width:480px}.cc-expand-head{flex-wrap:wrap;gap:8px!important}.cc-page h1{font-size:32px!important}.cc-welcome{font-size:11px}.cc-welcome a{white-space:nowrap}.cc-login form{padding:26px!important}.cc-login{padding-top:160px}.cc-login-art{height:200px;min-height:0}.cc-page-head{align-items:flex-start!important}.cc-table{min-width:520px}}
+.brand-name,.foot-brand,.cc-brand-title{font-family:'Parisienne',Georgia,serif!important;font-style:italic}
+.cc-login .cc-btn{justify-content:center}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{transition:none!important;animation:none!important}}
