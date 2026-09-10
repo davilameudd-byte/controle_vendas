@@ -19,6 +19,15 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const DATA_DOC = db.collection("appData").doc("mala-mia");
+const PUBLIC_CATALOG = db.collection("publicCatalog").doc("mala-mia");
+function publicCatalog(data) {
+  return { products: data.products.filter(p => p.published !== false).map(p => ({
+    id: p.id, name: p.name || "", category: p.category || "Perfumes",
+    price: Math.max(0, Number(p.precoVenda) || 0),
+    imageUrl: /^https:\/\//i.test(p.imageUrl || "") ? p.imageUrl : "",
+    available: Number(p.qty) > 0,
+  })) };
+}
 
 /* ------------------------ Ícones (SVG leve, sem libs) -------------------- */
 const makeIcon = (glyph) => ({ size = 16, strokeWidth, style, ...rest }) => (
@@ -216,6 +225,7 @@ function App({ onLogout }) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [saveErr, setSaveErr] = useState(false);
   const [loadErr, setLoadErr] = useState(false);
+  const [catalogStatus, setCatalogStatus] = useState("");
   const dataRef = useRef(DEFAULT_DATA);
   const ready = useRef(false);
 
@@ -244,8 +254,17 @@ function App({ onLogout }) {
     const next = typeof updater === "function" ? updater(dataRef.current) : updater;
     dataRef.current = next;
     setData(next);
-    DATA_DOC.set(next).then(() => setSaveErr(false)).catch(() => setSaveErr(true));
+    const batch = db.batch();
+    batch.set(DATA_DOC, next);
+    batch.set(PUBLIC_CATALOG, publicCatalog(next));
+    batch.commit().then(() => { setSaveErr(false); setCatalogStatus("Catálogo atualizado no site."); }).catch(() => { setSaveErr(true); setCatalogStatus("Falha ao salvar e atualizar o site. Tente novamente."); });
   }, []);
+
+  const publishCatalog = () => {
+    if (!ready.current) return;
+    setCatalogStatus("Atualizando catálogo…");
+    PUBLIC_CATALOG.set(publicCatalog(dataRef.current)).then(() => setCatalogStatus("Catálogo atualizado no site.")).catch(() => setCatalogStatus("Não foi possível publicar. Verifique sua conexão e tente novamente."));
+  };
 
   const productsById = useMemo(() => Object.fromEntries(data.products.map((p) => [p.id, p])), [data.products]);
   const customersById = useMemo(() => Object.fromEntries(data.customers.map((c) => [c.id, c])), [data.customers]);
@@ -365,6 +384,7 @@ function App({ onLogout }) {
       </aside>
 
       <main className="cc-main">
+        <div className="cc-catalog-sync"><button className="cc-btn cc-btn-secondary" onClick={publishCatalog}>Atualizar catálogo no site</button><span role="status">{catalogStatus}</span></div>
         <div className="cc-welcome"><div><strong>Mala Mia · Gestão</strong>Um cuidado especial com cada detalhe do seu negócio.</div><a href="../" target="_blank" rel="noopener noreferrer">Ver loja ↗</a></div>
         {tab === "dashboard" && <Dashboard data={data} activeSales={activeSales} commissionRows={commissionRows} />}
         {tab === "produtos" && <Produtos data={data} save={save} />}
@@ -500,7 +520,7 @@ function Dashboard({ data, activeSales, commissionRows }) {
 /* ============================== PRODUTOS ============================== */
 
 function Produtos({ data, save }) {
-  const blank = { name: "", category: "", qty: 0, valorPago: 0, custoFinal: 0, precoVenda: 0, local: "Paraguai", dataCompra: todayStr(), fornecedor: "" };
+  const blank = { name: "", category: "", qty: 0, valorPago: 0, custoFinal: 0, precoVenda: 0, local: "Paraguai", dataCompra: todayStr(), fornecedor: "", imageUrl: "", published: true };
   const [form, setForm] = useState(null);
   const [q, setQ] = useState("");
 
@@ -508,6 +528,8 @@ function Produtos({ data, save }) {
 
   const submit = () => {
     if (!form.name.trim()) return;
+    if (form.imageUrl && !/^https:\/\//i.test(form.imageUrl)) return alert("Use um endereço de imagem que comece com https://.");
+    if (num(form.precoVenda) < 0 || num(form.qty) < 0) return alert("Preço e estoque não podem ser negativos.");
     save((prev) => {
       const exists = prev.products.some((p) => p.id === form.id);
       return { ...prev, products: exists ? prev.products.map((p) => (p.id === form.id ? form : p)) : [...prev.products, { ...form, id: uid() }] };
@@ -533,7 +555,7 @@ function Produtos({ data, save }) {
             <tbody>
               {list.map((p) => (
                 <tr key={p.id}>
-                  <td className="cc-strong">{p.name}</td>
+                  <td className="cc-strong">{p.imageUrl && <img className="cc-product-thumb" src={p.imageUrl} alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} />}{p.name}</td>
                   <td>{p.category}</td>
                   <td>{p.qty <= num(data.settings.lowStock) ? <Badge tone={p.qty === 0 ? "red" : "gold"}>{p.qty}</Badge> : p.qty}</td>
                   <td>{formatBRL(p.valorPago)}</td>
@@ -555,6 +577,8 @@ function Produtos({ data, save }) {
         <Modal title={form.id ? "Editar produto" : "Novo produto"} onClose={() => setForm(null)}>
           <div className="cc-form-grid">
             <Field label="Nome do produto"><input className="cc-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></Field>
+            <Field label="Imagem do produto (URL)" hint="Cole o link direto da foto (https://). A foto aparecerá automaticamente no site."><input type="url" className="cc-input" value={form.imageUrl || ""} onChange={(e) => setForm({ ...form, imageUrl: e.target.value.trim() })} /></Field>
+            <Field label="Exibir no site"><select className="cc-input" value={form.published === false ? "nao" : "sim"} onChange={(e) => setForm({ ...form, published: e.target.value === "sim" })}><option value="sim">Sim</option><option value="nao">Não</option></select></Field>
             <Field label="Categoria"><input className="cc-input" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} /></Field>
             <Field label="Quantidade em estoque"><input type="number" className="cc-input" value={form.qty} onChange={(e) => setForm({ ...form, qty: num(e.target.value) })} /></Field>
             <Field label="Valor que paguei"><input type="number" step="0.01" className="cc-input" value={form.valorPago} onChange={(e) => setForm({ ...form, valorPago: num(e.target.value) })} /></Field>
