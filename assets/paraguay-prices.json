@@ -1,12 +1,12 @@
 {
   "schemaVersion": 1,
-  "checkedAt": "2026-09-14T12:02:24.944Z",
+  "checkedAt": "2026-09-15T19:51:22.444Z",
   "source": "Compras Paraguai",
   "items": [
     {
       "name": " Philos Opus Noir EDP 100ml",
       "priceUSD": 9.9,
-      "sourceDate": "2026-09-14",
+      "sourceDate": "2026-09-15",
       "status": "quoted",
       "sourceUrl": "https://www.comprasparaguai.com.br/perfume-maison-alhambra-philos-opus-noir-edp-100ml__4462828/",
       "basis": "Oferta de uma loja",
@@ -15,7 +15,7 @@
     {
       "name": "Ameerat Al Arab (Vermelho) EDP 100ml",
       "priceUSD": 13.99,
-      "sourceDate": "2026-09-14",
+      "sourceDate": "2026-09-15",
       "status": "quoted",
       "sourceUrl": "https://www.comprasparaguai.com.br/perfume-asdaaf-ameerat-al-arab-eau-de-parfum-feminino-100ml_54745/",
       "basis": "Menor preço anunciado na página",
@@ -23,8 +23,8 @@
     },
     {
       "name": "Asad (Black) EDP 100ml",
-      "priceUSD": 21.99,
-      "sourceDate": "2026-09-14",
+      "priceUSD": 21,
+      "sourceDate": "2026-09-15",
       "status": "quoted",
       "sourceUrl": "https://www.comprasparaguai.com.br/perfume-lattafa-asad-eau-de-parfum-masculino-100ml_52480/",
       "basis": "Menor preço anunciado na página",
@@ -33,7 +33,7 @@
     {
       "name": "Raneen EDP 80ml",
       "priceUSD": 18.5,
-      "sourceDate": "2026-09-14",
+      "sourceDate": "2026-09-15",
       "status": "quoted",
       "sourceUrl": "https://www.comprasparaguai.com.br/perfume-asdaaf-raneen-eau-de-parfum-feminino-80ml_68257/",
       "basis": "Menor preço anunciado na página",
@@ -42,7 +42,7 @@
     {
       "name": " Philos Pura EDP 100ml",
       "priceUSD": 13,
-      "sourceDate": "2026-09-14",
+      "sourceDate": "2026-09-15",
       "status": "quoted",
       "sourceUrl": "https://www.comprasparaguai.com.br/perfume-maison-alhambra-philos-pura-eau-de-parfum-unissex-100ml_51290/?ordem=loja",
       "basis": "Menor preço anunciado na página",
@@ -51,7 +51,7 @@
     {
       "name": " Vanilla Voyage EDP 100ml",
       "priceUSD": 37,
-      "sourceDate": "2026-09-14",
+      "sourceDate": "2026-09-15",
       "status": "quoted",
       "sourceUrl": "https://www.comprasparaguai.com.br/perfume-maison-asrar-vanilla-voyage-eau-de-parfum-unissex-100ml_69898/",
       "basis": "Menor preço anunciado na página",
@@ -60,7 +60,7 @@
     {
       "name": "Lattafa Yara Elixir EDP 100ml",
       "priceUSD": 24.71,
-      "sourceDate": "2026-09-14",
+      "sourceDate": "2026-09-15",
       "status": "quoted",
       "sourceUrl": "https://www.comprasparaguai.com.br/perfume-lattafa-yara-elixir-eau-de-parfum-feminino-100ml_64634/",
       "basis": "Menor preço anunciado na página",
@@ -68,8 +68,8 @@
     },
     {
       "name": "Celimax Retinal Shot Tightening Booster 15ml",
-      "priceUSD": 12.25,
-      "sourceDate": "2026-09-14",
+      "priceUSD": 12.5,
+      "sourceDate": "2026-09-15",
       "status": "quoted",
       "sourceUrl": "https://www.comprasparaguai.com.br/serum-facial-celimax-the-vita-a-retinal-shot-tightening-booster-15ml_67711/",
       "basis": "Menor preço anunciado na página",
@@ -78,7 +78,7 @@
     {
       "name": "Glacier Bella EDP 100ml",
       "priceUSD": 12.9,
-      "sourceDate": "2026-09-14",
+      "sourceDate": "2026-09-15",
       "status": "quoted",
       "sourceUrl": "https://www.comprasparaguai.com.br/perfume-maison-alhambra-glacier-bella-eau-de-parfum-feminino-100ml_52735/",
       "basis": "Menor preço anunciado na página",
@@ -87,7 +87,7 @@
     {
       "name": " Fino Premium Touch Hair Mask 230g",
       "priceUSD": 13.5,
-      "sourceDate": "2026-09-14",
+      "sourceDate": "2026-09-15",
       "status": "quoted",
       "sourceUrl": "https://www.comprasparaguai.com.br/mascara-capilar-shiseido-fino-premium-touch-hair-mask-230g_70548/",
       "basis": "Menor preço anunciado na página",
