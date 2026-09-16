@@ -531,6 +531,22 @@ function ProductPhoto({product, className, preview}) {
   }, [product.imageId, product.imageUrl]);
   return src ? <img src={src} className={className} alt={preview ? "Foto atual do produto" : ""} style={preview ? {width:120,height:140,objectFit:"contain",marginTop:12} : undefined} onError={() => setSrc("")} /> : null;
 }
+
+/* Classificação dos produtos importados do catálogo. */
+function suggestedCategory(name) {
+  const n = (name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  if (/bolsa|mochila|mala de viagem|malas de bordo/.test(n)) return "Bolsas e malas";
+  if (/relogio|pulseiras/.test(n)) return "Relógios e acessórios";
+  if (/^tester\b/.test(n)) return "Perfumes testers";
+  if (/^kit\b|^cofretti\b/.test(n)) return "Kits e presentes";
+  if (/miniatura/.test(n)) return "Miniaturas de perfumes";
+  if (/body splash|body spray/.test(n)) return "Body splash e sprays";
+  if (/siage|shampoo|condicionador|leave in|hair mask|combo volume/.test(n)) return "Cuidados com os cabelos";
+  if (/hidratante|locao corporal|retinal|pads |mascaras faciais/.test(n)) return "Cuidados com a pele";
+  if (/lip oil|palleta|paleta|pincel/.test(n)) return "Maquiagem";
+  return "Perfumes";
+}
+
 function Produtos({ data, save }) {
   const blank = { name: "", category: "", qty: 0, valorPago: 0, custoFinal: 0, precoVenda: 0, local: "Paraguai", dataCompra: todayStr(), fornecedor: "", imageUrl: "", published: true };
   const [form, setForm] = useState(null);
@@ -558,7 +574,20 @@ function Produtos({ data, save }) {
   };
   const [q, setQ] = useState("");
 
-  const list = data.products.filter((p) => p.name.toLowerCase().includes(q.toLowerCase()) || (p.category || "").toLowerCase().includes(q.toLowerCase()));
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categorizing, setCategorizing] = useState(false);
+  const [categoryMessage, setCategoryMessage] = useState("");
+  const categories = [...new Set(data.products.map(p => (p.category || "Sem categoria").trim()))].sort((a,b) => a.localeCompare(b,"pt-BR"));
+  const uncategorized = p => !p.category || ["sem categoria", "geral"].includes(p.category.trim().toLowerCase());
+  const pendingCategories = data.products.filter(uncategorized).length;
+  const categorize = async () => {
+    setCategorizing(true);
+    try {
+      const ok = await save(prev => ({...prev, products: prev.products.map(p => uncategorized(p) ? {...p, category: suggestedCategory(p.name)} : p)}));
+      setCategoryMessage(ok ? "Categorias salvas e publicadas no catálogo." : "Falha ao salvar categorias. Tente novamente.");
+    } finally { setCategorizing(false); }
+  };
+  const list = data.products.filter(p => (!categoryFilter || (p.category || "Sem categoria").trim() === categoryFilter) && (p.name.toLowerCase().includes(q.toLowerCase()) || (p.category || "").toLowerCase().includes(q.toLowerCase())));
 
   const submit = async () => {
     if (photoBusy || saving) return;
@@ -588,6 +617,11 @@ function Produtos({ data, save }) {
 
       <div className="cc-search"><Search size={15} /><input placeholder="Buscar por nome ou categoria…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
 
+      <div style={{display:"flex",gap:12,flexWrap:"wrap",alignItems:"end",marginBottom:16}}>
+        <Field label="Filtrar por categoria"><select className="cc-input" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}><option value="">Todas as categorias</option>{categories.map(c => <option key={c} value={c}>{c}</option>)}</select></Field>
+        {pendingCategories > 0 && <button className="cc-btn cc-btn-secondary" disabled={categorizing} onClick={categorize}>{categorizing ? "Categorizando…" : `Categorizar produtos sem categoria (${pendingCategories})`}</button>}
+      </div>
+      {categoryMessage && <p role="status">{categoryMessage}</p>}
       <Section title={`Produtos cadastrados (${list.length})`}>
         {list.length ? (
           <table className="cc-table">
