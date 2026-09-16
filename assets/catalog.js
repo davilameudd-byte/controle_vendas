@@ -9,7 +9,7 @@
   const categoryOf = p => (p.category || 'Sem categoria').trim();
   function applyFilter() {
     const selected = select ? select.value : '';
-    const visible = allProducts.filter(p => !selected || categoryOf(p) === selected);
+    const visible = allProducts.filter(p => !selected || categoryOf(p) === selected).sort((a, b) => Number(Boolean(b.available)) - Number(Boolean(a.available)) || a.name.trim().localeCompare(b.name.trim(), "pt-BR"));
     render(visible);
     if (count) count.textContent = visible.length + (visible.length === 1 ? ' produto' : ' produtos') + (selected ? ' em ' + selected : '');
     if (clear) clear.hidden = !selected;
