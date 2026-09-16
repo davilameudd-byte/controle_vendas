@@ -126,6 +126,7 @@ const DEFAULT_DATA = {
 const uid = () => Math.random().toString(36).slice(2, 10);
 const localDate = (d) => [d.getFullYear(), String(d.getMonth() + 1).padStart(2, "0"), String(d.getDate()).padStart(2, "0")].join("-");
 const todayStr = () => localDate(new Date());
+const stockFirst = (a, b) => Number(num(b.qty) > 0) - Number(num(a.qty) > 0) || (a.name || "").trim().localeCompare((b.name || "").trim(), "pt-BR");
 const num = (v) => (isNaN(parseFloat(v)) ? 0 : parseFloat(v));
 const formatBRL = (v) => (num(v)).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const formatUSD = (v) => (num(v)).toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -587,7 +588,7 @@ function Produtos({ data, save }) {
       setCategoryMessage(ok ? "Categorias salvas e publicadas no catálogo." : "Falha ao salvar categorias. Tente novamente.");
     } finally { setCategorizing(false); }
   };
-  const list = data.products.filter(p => (!categoryFilter || (p.category || "Sem categoria").trim() === categoryFilter) && (p.name.toLowerCase().includes(q.toLowerCase()) || (p.category || "").toLowerCase().includes(q.toLowerCase())));
+  const list = data.products.filter(p => (!categoryFilter || (p.category || "Sem categoria").trim() === categoryFilter) && (p.name.toLowerCase().includes(q.toLowerCase()) || (p.category || "").toLowerCase().includes(q.toLowerCase()))).sort(stockFirst);
 
   const submit = async () => {
     if (photoBusy || saving) return;
@@ -1208,7 +1209,7 @@ function Estoque({ data, activeSales }) {
       </div>
 
       <Section title="Produtos em estoque">
-        {data.products.length ? data.products.map((p) => {
+        {data.products.length ? [...data.products].sort(stockFirst).map((p) => {
           const isOpen = openId === p.id;
           return (
             <div key={p.id} className="cc-expand-row">
