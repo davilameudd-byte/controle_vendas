@@ -2,6 +2,32 @@
 (function () {
   const grid = document.getElementById('grid-produtos');
   const status = document.getElementById('catalog-status');
+  const select = document.getElementById('catalog-category');
+  const clear = document.getElementById('catalog-clear');
+  const count = document.getElementById('catalog-count');
+  let allProducts = [];
+  const categoryOf = p => (p.category || 'Sem categoria').trim();
+  function applyFilter() {
+    const selected = select ? select.value : '';
+    const visible = allProducts.filter(p => !selected || categoryOf(p) === selected);
+    render(visible);
+    if (count) count.textContent = visible.length + (visible.length === 1 ? ' produto' : ' produtos') + (selected ? ' em ' + selected : '');
+    if (clear) clear.hidden = !selected;
+    if (!visible.length && allProducts.length) message('Nenhum produto nesta categoria.');
+  }
+  if (select) select.addEventListener('change', applyFilter);
+  if (clear) clear.addEventListener('click', () => { select.value = ''; applyFilter(); select.focus(); });
+  function updateProducts(products) {
+    allProducts = products.filter(p => p && typeof p.name === 'string' && Number.isFinite(p.price) && p.price > 0);
+    if (select) {
+      const previous = select.value;
+      const categories = [...new Set(allProducts.map(categoryOf))].sort((a,b) => a.localeCompare(b,'pt-BR'));
+      select.replaceChildren(new Option('Todas as categorias', ''));
+      for (const category of categories) select.add(new Option(category, category));
+      select.value = categories.includes(previous) ? previous : '';
+    }
+    applyFilter();
+  }
   const money = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
   function message(text) { status.textContent = text; }
   function render(products) {
@@ -32,7 +58,7 @@
     const app = firebase.initializeApp({ apiKey:'AIzaSyBTeyeblOVhgKSbyhaeczixPN4QMGKOw0o', authDomain:'peste-5df22.firebaseapp.com', projectId:'peste-5df22', appId:'1:703481494502:web:1560cf8e5f7700ed033427' });
     app.firestore().collection('publicCatalog').doc('mala-mia').onSnapshot(snap => {
       const data = snap.exists ? snap.data() : {};
-      render(Array.isArray(data.products) ? data.products : []);
+      updateProducts(Array.isArray(data.products) ? data.products : []);
     }, () => { grid.replaceChildren(); message('Não foi possível atualizar o catálogo. Recarregue a página ou consulte pelo WhatsApp.'); });
   } catch (_) { message('Não foi possível carregar o catálogo. Recarregue a página ou consulte pelo WhatsApp.'); }
 })();
