@@ -102,6 +102,12 @@
   footer .foot-links a{text-decoration:none;color:var(--wine-deep);font-weight:600;}
 
   .wa-float{position:fixed;bottom:22px;right:22px;background:#25D366;color:#fff;width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 24px -8px rgba(0,0,0,.35);z-index:30;text-decoration:none;}
+  .catalog-filters{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:14px;}
+  .catalog-filters label{font-weight:600;font-size:14px;}
+  .catalog-filters select,.catalog-filters button{font:inherit;font-size:14px;border:1px solid var(--blush-deep);border-radius:10px;padding:12px;background:white;color:var(--wine-deep);max-width:100%;}
+  .catalog-filters select:focus-visible,.catalog-filters button:focus-visible{outline:2px solid var(--wine);outline-offset:3px;}
+  #catalog-count{color:var(--muted);font-size:13px;margin-bottom:20px;}
+  @media(max-width:520px){.catalog-filters{align-items:stretch;flex-direction:column;}}
 </style>
 <link rel="stylesheet" href="assets/theme.css?v=thumbs-2" />
 <link rel="stylesheet" href="assets/catalog-boutique.css?v=photo-overlay-2" />
@@ -110,13 +116,11 @@
 
 <!-- ======================= EDIÇÃO RÁPIDA =======================
   1) Troque o número de WhatsApp abaixo (formato: 55DDDNUMERO, só dígitos).
-  2) Troque as datas de encomenda/entrega.
+  2) Os produtos são publicados pelo painel de gestão.
   3) Edite/adicione produtos na seção <section id="perfumes">.
 ================================================================= -->
 <script>
   const WHATSAPP_NUMERO = "5521970034991"; // <-- TROQUE pelo número real (com DDI+DDD, só números)
-  const DATA_ENCOMENDAS = "28/09";
-  const DATA_ENTREGA = "07/10";
 
   function linkPedido(produto) {
     const msg = produto
@@ -129,9 +133,6 @@
     document.querySelectorAll("[data-wa]").forEach((el) => {
       el.href = linkPedido(el.getAttribute("data-wa") || null);
     });
-    document.getElementById("data-encomendas").textContent = DATA_ENCOMENDAS;
-    document.getElementById("data-encomendas-2").textContent = DATA_ENCOMENDAS;
-    document.getElementById("data-entrega").textContent = DATA_ENTREGA;
   });
 </script>
 
@@ -162,10 +163,6 @@
       <a class="btn btn-ghost" href="#perfumes">Ver catálogo</a>
     </div>
 
-    <div class="info-strip">
-      <div class="info-item"><div class="label">Encomendas até</div><div class="value" id="data-encomendas">—</div></div>
-      <div class="info-item"><div class="label">Entrega prevista</div><div class="value" id="data-entrega">—</div></div>
-    </div>
   </div>
 </section>
 
@@ -177,6 +174,12 @@
       <p>Conheça nossos perfumes e confira o que está disponível em estoque.</p>
     </div>
 
+    <div class="catalog-filters">
+      <label for="catalog-category">Filtrar por categoria</label>
+      <select id="catalog-category"><option value="">Todas as categorias</option></select>
+      <button type="button" id="catalog-clear" hidden>Limpar filtro</button>
+    </div>
+    <p id="catalog-count" aria-live="polite"></p>
     <p id="catalog-status" role="status">Carregando produtos…</p>
     <div class="grid" id="grid-produtos"></div>
 
@@ -199,11 +202,11 @@
       <div class="step">
         <div class="num">2</div>
         <h3>Garanta com sinal</h3>
-        <p>Confirma o pedido até a data limite — quantidades são limitadas por viagem.</p>
+        <p>Confirme a disponibilidade e as condições do seu pedido pelo WhatsApp.</p>
       </div>
       <div class="step">
         <div class="num">3</div>
-        <h3>Receba na data prevista</h3>
+        <h3>Combine a entrega</h3>
         <p>Assim que a mala chega do Paraguai, combinamos a entrega ou retirada.</p>
       </div>
     </div>
@@ -214,7 +217,7 @@
   <div class="wrap">
     <div class="final-cta">
       <h2>Encontre o perfume que é a sua cara.</h2>
-      <p>Quantidades limitadas · encomendas até <strong id="data-encomendas-2"></strong></p>
+      <p>Consulte a disponibilidade e combine a entrega pelo WhatsApp.</p>
       <a class="btn btn-primary" data-wa href="#">Garanta já o seu no WhatsApp</a>
     </div>
   </div>
@@ -237,6 +240,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
 <script src="assets/product-photos.js?v=1"></script>
-<script src="assets/catalog.js?v=photos-1"></script>
+<script src="assets/catalog.js?v=categories-1"></script>
 </body>
 </html>
