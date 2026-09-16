@@ -93,5 +93,15 @@
       "basis": "Menor preço anunciado na página",
       "note": ""
     }
-  ]
+  ],
+  "exchangeRate": {
+    "valueBRL": 5.24,
+    "source": "Compras Paraguai",
+    "sourceUrl": "https://www.comprasparaguai.com.br/",
+    "sourceDate": "2026-09-16",
+    "sourceUpdatedAtText": "16 de Setembro de 2026 às 13:45",
+    "checkedAt": "2026-09-16T17:43:14Z",
+    "status": "quoted",
+    "note": "Cotação exibida em Dólar hoje, confirmada na configuração inicial. Próximas coletas junto aos preços, diariamente às 9h."
+  }
 }
