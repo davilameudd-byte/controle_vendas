@@ -1263,8 +1263,7 @@ function replenishmentRows(data, coverageDays, today) {
 }
 function ComparacaoParaguai({data}) {
   const [feed,setFeed]=useState(null), [error,setError]=useState(""), [loading,setLoading]=useState(false);
-  const [fx,setFx]=useState(null), [fxError,setFxError]=useState(""), [fxLoading,setFxLoading]=useState(false);
-  const [manual,setManual]=useState(false), [manualRate,setManualRate]=useState(0);
+
   const [expenses,setExpenses]=useState(()=>num(data.settings.expenseByLocation.Paraguai));
   const [filter,setFilter]=useState("todos"), [basis,setBasis]=useState("custo"), [coverageDays,setCoverageDays]=useState(30);
   const normalize=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\s+/g," ").trim();
@@ -1280,21 +1279,11 @@ function ComparacaoParaguai({data}) {
     }catch(_){setError("Não foi possível atualizar os preços. Confira a data das referências exibidas.");}
     finally{clearTimeout(timer);setLoading(false);}
   },[]);
-  const reloadDollar=useCallback(async()=>{
-    setFxLoading(true);
-    const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),12000);
-    try {
-      const response=await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL",{signal:controller.signal});
-      if(!response.ok) throw Error();
-      const quote=(await response.json()).USDBRL;
-      const value=Number(quote?.ask), timestamp=Number(quote?.timestamp)*1000;
-      if(!Number.isFinite(value)||value<=0||!Number.isFinite(timestamp)||timestamp<=0||timestamp>Date.now()+300000) throw Error();
-      setFx({value,timestamp});setFxError("");
-    }catch(_){setFxError("Não foi possível atualizar o dólar. A última cotação, se disponível, permanece com sua data. Você também pode informar a taxa manualmente.");}
-    finally{clearTimeout(timer);setFxLoading(false);}
-  },[]);
-  useEffect(()=>{reloadPrices();reloadDollar();const timer=setInterval(()=>{reloadPrices();reloadDollar();},300000);return()=>clearInterval(timer);},[reloadPrices,reloadDollar]);
-  const rate=manual?manualRate:(fx?.value||0);
+  useEffect(()=>{reloadPrices();const timer=setInterval(reloadPrices,300000);return()=>clearInterval(timer);},[reloadPrices]);
+  const fx=feed?.exchangeRate;
+  const fxValid=fx?.source==="Compras Paraguai" && Number.isFinite(fx?.valueBRL) && fx.valueBRL>0 && Number.isFinite(Date.parse(fx?.checkedAt));
+  const rate=fxValid?fx.valueBRL:0;
+  const fxFresh=fxValid&&fx.status==="quoted"&&fx.sourceDate===todayStr();
   const rows=data.products.map(p=>{
     const quote=feed?.items.find(q=>normalize(q.name)===normalize(p.name));
     const valid=quote&&["quoted","historical"].includes(quote.status)&&Number.isFinite(quote.priceUSD)&&quote.priceUSD>0;
@@ -1316,18 +1305,19 @@ function ComparacaoParaguai({data}) {
   const unverified=stockRows.filter(r=>r.sold===0&&r.stock===0).length;
   return <>
     <Section title="Comparação automática · Compras Paraguai">
-      <p className="cc-muted">Preços consultados diariamente às 9h (Brasília). O painel atualiza os resultados e o dólar a cada 5 minutos enquanto esta aba estiver aberta.</p>
+      <p className="cc-muted">Preços e dólar do Compras Paraguai são consultados juntos uma vez por dia, às 9h (Brasília). A cotação fica fixa até a próxima consulta diária.</p>
       <p className="cc-muted">Última consulta de produtos: {feed?.checkedAt?new Date(feed.checkedAt).toLocaleString("pt-BR"):"Aguardando"}{feed?.checkedAt&&Date.now()-Date.parse(feed.checkedAt)>36*3600000?" · Consulta atrasada":""}</p>
       <div className="cc-form-grid" style={{marginBottom:20}}>
-        <Field label="Modo da cotação"><select className="cc-input" value={manual?"manual":"auto"} onChange={e=>{setManual(e.target.value==="manual");if(e.target.value==="manual"&&!manualRate)setManualRate(fx?.value||0);}}><option value="auto">Dólar automático</option><option value="manual">Informar minha taxa de câmbio</option></select></Field>
-        <Field label="Dólar para comparar (R$)" hint={manual?"Taxa informada por você para esta simulação.":"Dólar comercial de venda (ask). A taxa da loja ou casa de câmbio pode ser diferente."}><input className="cc-input" type="number" min="0" step="0.0001" value={rate||""} readOnly={!manual} placeholder={fxLoading?"Consultando…":"Indisponível"} onChange={e=>setManualRate(Math.max(0,num(e.target.value)))}/></Field>
+        <Field label="Dólar do Compras Paraguai (R$)" hint="Mesma cotação exibida no site na consulta diária, aplicada a todos os produtos."><input className="cc-input" type="text" value={fxValid?rate.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:4}):"Indisponível"} readOnly /></Field>
         <Field label="Despesas para comparar (%)" hint="Percentual estimado de despesas de compra e viagem."><input className="cc-input" type="number" min="0" step="0.1" value={expenses} onChange={e=>setExpenses(Math.max(0,num(e.target.value)))}/></Field>
         <Field label="Comparar com"><select className="cc-input" value={basis} onChange={e=>setBasis(e.target.value)}><option value="custo">Meu custo atual × reposição com despesas</option><option value="venda">Meu preço de venda × Paraguai convertido</option></select></Field>
         <Field label="Filtrar comparação"><select className="cc-input" value={filter} onChange={e=>setFilter(e.target.value)}><option value="todos">Todos</option><option value="caro">Mais caro</option><option value="barato">Mais barato</option><option value="igual">Igual</option><option value="sem-base">Sem comparação</option></select></Field>
       </div>
-      <p className="cc-muted">Dólar: <a href="https://docs.awesomeapi.com.br/api-de-moedas" target="_blank" rel="noopener noreferrer">AwesomeAPI · USD/BRL</a>{fx?" · Cotação de "+new Date(fx.timestamp).toLocaleString("pt-BR"):" · Aguardando cotação"}{fx&&Date.now()-fx.timestamp>36*3600000?" · Referência antiga (mercado fechado ou fonte sem atualização)":""}</p>
-      <button className="cc-btn cc-btn-secondary" disabled={loading||fxLoading} onClick={()=>{reloadPrices();reloadDollar();}}>{loading||fxLoading?"Atualizando…":"Atualizar preços e dólar"}</button>
-      {error&&<p role="alert">{error}</p>}{fxError&&<p role="alert">{fxError}</p>}
+      <p className="cc-muted">Fonte: <a href="https://www.comprasparaguai.com.br/" target="_blank" rel="noopener noreferrer">Compras Paraguai · Dólar hoje</a>{fxValid?" · Coletado em "+new Date(fx.checkedAt).toLocaleString("pt-BR"):" · Aguardando consulta diária"}{fx?.sourceUpdatedAtText?" · Fonte: "+fx.sourceUpdatedAtText:""}{fxValid&&!fxFresh?" · Referência antiga: aguardando nova confirmação":""}</p>
+      <button className="cc-btn cc-btn-secondary" disabled={loading} onClick={reloadPrices}>{loading?"Carregando…":"Recarregar consulta salva"}</button>
+      <p className="cc-muted">Recarregar apenas lê a consulta já salva. Não busca outra cotação durante o dia.</p>
+      {error&&<p role="alert">{error}</p>}
+      {!fxValid&&<p role="alert">Dólar do Compras Paraguai indisponível. A conversão aguardará uma cotação confirmada nessa fonte.</p>}
       <p role="status" className="cc-muted">{filtered.length} de {rows.length} produtos · {basis==="custo"?"Reposição com despesas comparada ao seu custo atual":"Paraguai convertido comparado ao seu preço de venda"}</p>
       <div style={{overflowX:"auto",marginTop:16}}><table className="cc-table">
         <thead><tr><th>Produto</th><th>Paraguai (US$)</th><th>Fonte / data</th><th>Convertido (R$)</th><th>Custo estimado com despesas</th><th>Seu custo atual</th><th>Reposição × seu custo</th><th>Sua venda</th><th>Paraguai convertido × sua venda</th></tr></thead>
@@ -1348,7 +1338,7 @@ function ComparacaoParaguai({data}) {
         <tbody>{suggestions.map(r=>{
           const quote=rows.find(v=>v.p.id===r.product.id);
           const cost=quote?.landed;
-          const fresh=cost!==null&&cost!==undefined&&!quote.old&&!error&&(manual?rate>0:fx&&!fxError&&Date.now()-fx.timestamp<=36*3600000);
+          const fresh=cost!==null&&cost!==undefined&&!quote.old&&!error&&fxFresh;
           const marginOK=cost!==null&&cost!==undefined&&num(r.product.precoVenda)>cost;
           const kind=paraguayDifference(cost,num(r.product.custoFinal));
           return <tr key={r.product.id}><td className="cc-strong">{r.product.name}</td><td><Badge tone={r.stock===0?"red":"gold"}>{r.stock===0?"Sem estoque":"Estoque baixo"}</Badge></td><td>{r.stock}</td><td>{r.sold}</td><td>{r.target}</td><td className="cc-strong">{r.suggested}</td><td>{fresh?formatBRL(cost*r.suggested):"Consultar preço atualizado"}</td><td>{!fresh?"Confirmar preço e câmbio antes de comprar":!marginOK?"Custo estimado atinge ou supera a venda: revisar preço":kind==="barato"?"Reposição abaixo do custo atual":kind==="caro"?"Reposição mais cara: revisar margem":kind==="igual"?"Reposição no mesmo custo":"Sem custo anterior para comparar"}</td></tr>;
